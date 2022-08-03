@@ -5,6 +5,7 @@ import (
 	"auth-service/service"
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -28,7 +29,10 @@ func StartServer() {
 	config := &model.HttpConfig{}
 	getHttpConfig(config)
 	addr := strings.Join([]string{config.Ip, config.Port}, ":")
-	http.ListenAndServe(addr, r)
+	log.Printf("start http server, listing...")
+	if err := http.ListenAndServe(addr, r); err != nil {
+		panic(err)
+	}
 }
 
 func getHttpConfig(config *model.HttpConfig) {

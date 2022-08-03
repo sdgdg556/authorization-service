@@ -5,6 +5,7 @@ import (
 	"auth-service/service"
 	"context"
 	"testing"
+	"time"
 )
 
 var (
@@ -42,6 +43,7 @@ func TestCreateUser(t *testing.T) {
 	if err := svc.CreateUser(context.Background(), &req); err != nil {
 		t.Fatalf("CreateUser() 执行错误 ，期望err=nil 实际结果err=%+v", err)
 	}
+	// 重复创建
 	if err := svc.CreateUser(context.Background(), &req); err == nil {
 		t.Fatalf("CreateUser() 执行错误 ，期望err=user already exist! 实际结果err=nil")
 	}
@@ -56,6 +58,7 @@ func TestCreateRole(t *testing.T) {
 	if err := svc.CreateRole(context.Background(), &req); err != nil {
 		t.Fatalf("CreateRole() 执行错误 ，期望err=nil 实际结果err=%+v", err)
 	}
+	// 重复创建
 	if err := svc.CreateRole(context.Background(), &req); err == nil {
 		t.Fatalf("CreateRole() 执行错误 ，期望err=role already exist! 实际结果err=nil")
 	}
@@ -79,6 +82,7 @@ func TestUserAddRole(t *testing.T) {
 	if err := svc.UserAddRole(context.Background(), &req); err != nil {
 		t.Fatalf("UserAddRole() 执行错误 ，期望err=nil 实际结果err=%+v", err)
 	}
+	// 用户名密码错误
 	req.UserName = "caohaoyu123"
 	if err := svc.UserAddRole(context.Background(), &req); err == nil {
 		t.Fatalf("UserAddRole() 执行错误 ，期望err=user is invalid! 实际结果err=nil")
@@ -88,6 +92,7 @@ func TestUserAddRole(t *testing.T) {
 	if err := svc.UserAddRole(context.Background(), &req); err == nil {
 		t.Fatalf("UserAddRole() 执行错误 ，期望err=user is invalid! 实际结果err=nil")
 	}
+	// 角色不存在
 	req.UserPassword = password
 	req.RoleName = "xxxx"
 	if err := svc.UserAddRole(context.Background(), &req); err == nil {
@@ -101,12 +106,32 @@ func TestAuthorization(t *testing.T) {
 		Name:     username,
 		Password: password,
 	}
+	// token过期
+	svc.AuthConfig.TokenExpire = "4s"
 	resp, err := svc.Authorization(context.Background(), &req)
 	if err != nil {
 		t.Fatalf("Authorization() 执行错误 ，期望err=nil 实际结果err=%+v", err)
 	}
 	token = resp.Token
-
+	req2 := model.TokenRequest{
+		Token: token,
+	}
+	_, err = svc.UserAllRoles(context.Background(), &req2)
+	if err != nil {
+		t.Fatalf("UserAllRoles() 执行错误 ，期望err=nil 实际结果err=%+v", err)
+	}
+	time.Sleep(5 * time.Second)
+	_, err = svc.UserAllRoles(context.Background(), &req2)
+	if err == nil {
+		t.Fatalf("UserAllRoles() 执行错误 ，期望err=Authentication faild! 实际结果err=nil")
+	}
+	// 相同用户请求不重复申请token
+	svc.AuthConfig.TokenExpire = "2h"
+	resp, err = svc.Authorization(context.Background(), &req)
+	if err != nil {
+		t.Fatalf("Authorization() 执行错误 ，期望err=nil 实际结果err=%+v", err)
+	}
+	token = resp.Token
 	resp2, err := svc.Authorization(context.Background(), &req)
 	if err != nil {
 		t.Fatalf("Authorization() 执行错误 ，期望err=nil 实际结果err=%+v", err)
@@ -114,7 +139,7 @@ func TestAuthorization(t *testing.T) {
 	if token != resp2.Token {
 		t.Fatalf("Authorization() 执行错误 ，期望两次获取相同token 实际结果token1=%s, token2=%s", token, resp2.Token)
 	}
-
+	// 用户名密码错误
 	req.Name = "caohaoyu123"
 	_, err = svc.Authorization(context.Background(), &req)
 	if err == nil {
@@ -149,7 +174,7 @@ func TestUserCheckRole(t *testing.T) {
 	if !resp.Result {
 		t.Fatalf("UserCheckRole() 执行错误 ，期望result=true 实际结果result=%v", resp.Result)
 	}
-
+	// token错误
 	req.Token = "123"
 	resp, err = svc.UserCheckRole(context.Background(), &req)
 	if err == nil {
@@ -158,6 +183,7 @@ func TestUserCheckRole(t *testing.T) {
 	if resp.Result {
 		t.Fatalf("UserCheckRole() 执行错误 ，期望result=false 实际结果result=%v", resp.Result)
 	}
+	// 角色错误
 	req.Token = token
 	req.RoleName = "xxxx"
 	resp, err = svc.UserCheckRole(context.Background(), &req)
@@ -174,6 +200,7 @@ func TestUserAllRoles(t *testing.T) {
 	req := model.TokenRequest{
 		Token: token,
 	}
+	// 校验结果
 	resp, err := svc.UserAllRoles(context.Background(), &req)
 	if err != nil {
 		t.Fatalf("UserAllRoles() 执行错误 ，期望err=nil 实际结果err=%+v", err)
@@ -187,6 +214,7 @@ func TestUserAllRoles(t *testing.T) {
 			break
 		}
 	}
+	// token错误
 	req.Token = "123"
 	_, err = svc.UserAllRoles(context.Background(), &req)
 	if err == nil {
@@ -203,6 +231,7 @@ func TestDeleteUser(t *testing.T) {
 	if err := svc.DeleteUser(context.Background(), &req); err != nil {
 		t.Fatalf("DeleteUser() 执行错误 ，期望err=nil 实际结果err=%+v", err)
 	}
+	// 重复删除
 	if err := svc.DeleteUser(context.Background(), &req); err == nil {
 		t.Fatalf("DeleteUser() 执行错误 ，期望err=user is invalid! 实际结果err=nil")
 	}
@@ -211,6 +240,7 @@ func TestDeleteUser(t *testing.T) {
 		UserPassword: password,
 		RoleName:     role1,
 	}
+	// 用户不存在情况添加角色
 	if err := svc.UserAddRole(context.Background(), &req2); err == nil {
 		t.Fatalf("UserAddRole() 执行错误 ，删除用户之后添加用户角色期望err=user is invalid! 实际结果err=nil")
 	}
@@ -224,6 +254,7 @@ func TestDeleteRole(t *testing.T) {
 	if err := svc.DeleteRole(context.Background(), &req); err != nil {
 		t.Fatalf("DeleteRole() 执行错误 ，期望err=nil 实际结果err=%+v", err)
 	}
+	// 重复删除
 	if err := svc.DeleteRole(context.Background(), &req); err == nil {
 		t.Fatalf("DeleteRole() 执行错误 ，期望err=Role doesn't exist! 实际结果err=nil")
 	}
@@ -232,6 +263,7 @@ func TestDeleteRole(t *testing.T) {
 		UserPassword: password,
 		RoleName:     role1,
 	}
+	// 删除角色后添加用户角色
 	if err := svc.UserAddRole(context.Background(), &req2); err == nil {
 		t.Fatalf("UserAddRole() 执行错误 ，删除角色之后添加用户角色期望err=Role doesn't exist! 实际结果err=nil")
 	}
@@ -249,6 +281,7 @@ func TestInvalidate(t *testing.T) {
 	if err := svc.Invalidate(context.Background(), &req); err != nil {
 		t.Fatalf("Invalidate() 执行错误 ，期望err=nil 实际结果err=%+v", err)
 	}
+	// 令牌删除的情况下获取所有用户角色
 	resp, err := svc.UserAllRoles(context.Background(), &req)
 	if err == nil {
 		t.Fatalf("UserAllRoles() 执行错误 ，令牌过期之后查询所有角色期望err=Authentication faild! 实际结果err=nil")

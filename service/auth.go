@@ -12,7 +12,7 @@ func (s *Service) Authorization(ctx context.Context, req *model.UserRequest) (re
 		Name:     req.Name,
 		Password: req.Password,
 	}
-	expire := model.ParseTime(s.authConfig.TokenExpire)
+	expire := model.ParseTime(s.AuthConfig.TokenExpire)
 	resp = &model.TokenResponse{}
 	if token, err = s.dao.Authorization(ctx, user, expire); err != nil {
 		return

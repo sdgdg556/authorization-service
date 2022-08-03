@@ -10,13 +10,13 @@ import (
 
 type Service struct {
 	dao        *storage.Dao
-	authConfig *model.AuthConfig
+	AuthConfig *model.AuthConfig
 }
 
 func InitService() *Service {
 	return &Service{
 		dao:        storage.InitDao(),
-		authConfig: getAuthConfig(),
+		AuthConfig: getAuthConfig(),
 	}
 }
 
