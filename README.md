@@ -1,6 +1,7 @@
-# 身份认证鉴权服务demo
+身份认证鉴权服务demo
+=
 
-#### 项目简介
+### 项目简介
 
 整个项目包括实现用户和角色创建以及删除、用户鉴权、用户角色校验和展示等功能。
 
@@ -8,13 +9,13 @@
 
 对外暴露一系列http接口来提供服务。
 
-#### 运行环境
+运行环境
 
-golang 版本>=1.13
+golang 版本>=1.13  
 
-#### 项目结构
+### 项目结构
 
-#####     目录
+#### 目录
 
 - cmd: 项目入口，main.go内部会调用网关层的初始化
 
@@ -33,7 +34,7 @@ golang 版本>=1.13
 - test： 单元测试，主要包括所有涉及到的接口服务测试
 
 
-#####     配置说明
+#### 配置说明
 
 configs下有两个配置文件：
 
@@ -42,7 +43,7 @@ configs下有两个配置文件：
 - http.json负责httpclient配置，目前仅支持修改ip,port。
 
 
-#### 接口列表
+### 接口列表
 
 | 请求方式 | url | 接口描述 | 接口参数 | 参数示例 | 返回成功实例 |
 | --- | --- | --- | --- | --- | --- |
@@ -56,9 +57,9 @@ configs下有两个配置文件：
 | post | /user/check-role | 检查用户是否有某个角色 | auth_token (string, required)<br/>role_name (string, required) | {"auth_token": "4XsohHLtu95ZP92nbKtgQJsSLAJwyWcfP4z5","role_name": "hushi"} | {"code":200,"message":"ok","data":{"result":true}} |
 | post | /user/roles | 用户下所有角色列表 | auth_token (string, required) | { "auth_token": "chqY7tCoZizKvPpMmzcG5fKlUcm6jw0QoiYg"} | {"code":200,"message":"ok","data":{"roles":["super"]}} |
 
-#### 开始使用
+### 开始使用
 
-#####     服务启动
+#### 服务启动
 
 拉取代码之后, 可以在goland里直接build main.go，如果是命令行里运行cd到项目根目录运行：
 
@@ -68,7 +69,7 @@ go run cmd/main.go
 
 看到运行日志输出start http server, listing...后即代表服务已经启动，可以使用postman模拟http请求访问api。
 
-#####     单元测试
+#### 单元测试
 
 单元测试部分如果在命令行里运行可以cd到项目根目录运行：
 
@@ -78,13 +79,13 @@ go test -v test/service_test.go
 
 在goland里可以直接到test目录下build service_test.go文件
 
-#### 问题&&解决方案
+### 问题&&解决方案
 
 - 如果出现bind: address already in use报错：
   解决：可以看看configs目录下的http.json配置，默认配置的8000端口可能由于本地8000端口已经被占用，可以修改port配置之后再重新启动服务。
 
 
-#### 项目延伸
+### 项目延伸
 
 - 全局预留了context方便后续对请求做timeout处理。
 
